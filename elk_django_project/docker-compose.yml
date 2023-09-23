@@ -1,0 +1,36 @@
+version: '3'
+services:
+  django:
+    build:
+      context: .
+      dockerfile: Dockerfile.django
+    ports:
+      - "8000:8000"
+    depends_on:
+      - logstash
+    environment:
+      - DJANGO_SETTINGS_MODULE=elk_django_project.settings
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.14.0
+    ports:
+      - "5044:5044"
+    volumes:
+      - ./elk_django_project/logstash-config:/usr/share/logstash/pipeline
+      - ./elk_django_project/demo.log:/usr/share/logstash/demo.log
+    environment:
+      - LS_JAVA_OPTS=-Xmx256m -Xms256m
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
+    ports:
+      - "9200:9200"
+    environment:
+      - "discovery.type=single-node"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.14.0
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
